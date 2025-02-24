@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { Customer } from "@/lib/features/jobs/jobsSlice";
+import { Part } from "@/lib/features/jobs/jobsSlice";
+
+interface PartType {
+  name: string;
+  quantity: number;
+  price: number;
+  description: string;
+  Part: Part;
+}
 
 export async function POST(req: Request) {
   try {
@@ -124,10 +132,12 @@ export async function POST(req: Request) {
 
     const taxCodesData: TaxCodeType = await taxCodesResponse.json();
 
-    const matchedTaxCode = taxCodesData.Items.find((taxCode: any) => {
-      const name = taxCode.Code.toLowerCase();
-      return name === "GST".toLowerCase();
-    });
+    const matchedTaxCode: TaxCode | undefined = taxCodesData.Items.find(
+      (taxCode: any) => {
+        const name = taxCode.Code.toLowerCase();
+        return name === "GST".toLowerCase();
+      }
+    );
 
     if (!matchedTaxCode) {
       return NextResponse.json(
@@ -165,7 +175,7 @@ Vehicle Type: ${jobDescription.vehicleType}
       Lines: [
         jobDescription && jobDescriptionItem,
         customerComments && customerCommentsItem,
-        ...parts.map((part: any) => ({
+        ...parts.map((part: PartType) => ({
           Type: "Transaction",
           Description: part.description,
           UnitCount: part.quantity,
@@ -183,7 +193,7 @@ Vehicle Type: ${jobDescription.vehicleType}
 * Drivers/Operators must do pre-check of Heavy Vehicles before starting a trip to identify any faults.
 * Service completed and Parts fitted as per manufacturer Specifications. AHVW is liable to cover costs for the Fitted/repaired parts and service completed only and is not liable for any other losses.
 * All Fitted parts remain the property of AHVW unless fully paid. Parts can be recovered at any time at any place after due date.
-* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
+* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
     };
 
     const response = await fetch(
