@@ -171,8 +171,8 @@ Vehicle Type: ${jobDescription.vehicleType}
         MonthlyChargeForLatePayment: 0,
       },
       Lines: [
-        jobDescription && jobDescriptionItem,
-        customerComments && customerCommentsItem,
+        ...[jobDescriptionItem].filter(() => jobDescription),
+        ...[customerCommentsItem].filter(() => customerComments),
         ...parts.map((part: any) => ({
           Type: "Transaction",
           Description: part.description,
