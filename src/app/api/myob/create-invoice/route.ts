@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 
 import { cookies } from "next/headers";
 
+import { Part } from "@/lib/features/jobs/jobsSlice";
+
+interface PartType {
+  name: string;
+
+  quantity: number;
+
+  price: number;
+
+  description: string;
+
+  Part: Part;
+}
+
 export async function POST(req: Request) {
   try {
     const {
@@ -46,7 +60,7 @@ export async function POST(req: Request) {
 
     // Fetch all customer contacts
 
-    let customers: any[] = [];
+    let customers: MyobCustomer[] = [];
 
     let nextPageLink = `${apiBaseUrl}/${companyFileId}/Contact/Customer`;
 
@@ -105,8 +119,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const customerUID = matchedCustomer.UID;
-
     const accountsUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/Account`;
 
     const accountsResponse = await fetch(accountsUrl, {
@@ -133,18 +145,6 @@ export async function POST(req: Request) {
 
         { status: accountsResponse.status }
       );
-    }
-
-    const accountsData = await accountsResponse.json();
-
-    const matchedAccount = accountsData.Items.find((account: any) => {
-      const name = account.Name.toLowerCase();
-
-      return name === "Sales".toLowerCase();
-    });
-
-    if (!matchedAccount) {
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
     const taxCodesUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/taxCode`;
@@ -175,9 +175,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const taxCodesData = await taxCodesResponse.json();
+    type TaxCodeType = {
+      Items: TaxCode[];
+    };
 
-    const matchedTaxCode = taxCodesData.Items.find((taxCode: any) => {
+    const taxCodesData: TaxCodeType = await taxCodesResponse.json();
+
+    const matchedTaxCode = taxCodesData.Items.find((taxCode: TaxCode) => {
       const name = taxCode.Code.toLowerCase();
 
       return name === "GST".toLowerCase();
@@ -196,12 +200,9 @@ export async function POST(req: Request) {
 
       Description: `Vehicle Registration: ${jobDescription.registration}
 
-
 Odometer: ${jobDescription.odometer}
 
-
 Vehicle Type: ${jobDescription.vehicleType}
-
 
       `,
     };
@@ -236,10 +237,11 @@ Vehicle Type: ${jobDescription.vehicleType}
       },
 
       Lines: [
-        ...[jobDescriptionItem].filter(() => jobDescription),
-        ...[customerCommentsItem].filter(() => customerComments),
+        jobDescription && jobDescriptionItem,
 
-        ...parts.map((part: any) => ({
+        customerComments && customerCommentsItem,
+
+        ...parts.map((part: PartType) => ({
           Type: "Transaction",
 
           Description: part.description,
@@ -262,23 +264,17 @@ Vehicle Type: ${jobDescription.vehicleType}
 
       Comment: `
 
-
 * Semi Trailer to be serviced every 20,000KM or 3 months whichever earlier after B or C Service
-
 
 * Wheel Nuts to be checked after 50KM
 
-
 * Drivers/Operators must do pre-check of Heavy Vehicles before starting a trip to identify any faults.
-
 
 * Service completed and Parts fitted as per manufacturer Specifications. AHVW is liable to cover costs for the Fitted/repaired parts and service completed only and is not liable for any other losses.
 
-
 * All Fitted parts remain the property of AHVW unless fully paid. Parts can be recovered at any time at any place after due date.
 
-
-* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
+* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
     };
 
     const response = await fetch(
