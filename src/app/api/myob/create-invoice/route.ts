@@ -132,12 +132,10 @@ export async function POST(req: Request) {
 
     const taxCodesData: TaxCodeType = await taxCodesResponse.json();
 
-    const matchedTaxCode: TaxCode | undefined = taxCodesData.Items.find(
-      (taxCode: any) => {
-        const name = taxCode.Code.toLowerCase();
-        return name === "GST".toLowerCase();
-      }
-    );
+    const matchedTaxCode = taxCodesData.Items.find((taxCode: TaxCode) => {
+      const name = taxCode.Code.toLowerCase();
+      return name === "GST".toLowerCase();
+    });
 
     if (!matchedTaxCode) {
       return NextResponse.json(
