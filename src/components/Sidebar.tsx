@@ -1,7 +1,7 @@
 "use client";
 
 // components/Sidebar.tsx
-import React, { useState, useTransition } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store"; // Assuming you have a store setup
 import { setSelectedJob } from "@/lib/features/jobs/jobsSlice";

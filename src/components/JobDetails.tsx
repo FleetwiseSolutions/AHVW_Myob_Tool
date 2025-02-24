@@ -40,7 +40,7 @@ const VehicleTypeMap = (vehicleType: string) => {
 const JobDetails: React.FC = () => {
   const { selectedJob } = useSelector((state: RootState) => state.jobs);
   const dispatch = useDispatch<AppDispatch>();
-  const { jobs, status, error } = useSelector((state: RootState) => state.jobs);
+  const { status, error } = useSelector((state: RootState) => state.jobs);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [invoiceMessage, setInvoiceMessage] = useState("");
 
@@ -109,7 +109,7 @@ const JobDetails: React.FC = () => {
         setInvoiceMessage(`Error creating invoice: ${data.error}`);
       }
     } catch (error) {
-      setInvoiceMessage("Failed to create invoice.");
+      setInvoiceMessage("Failed to create invoice." + error);
     } finally {
       setLoadingInvoice(false);
     }

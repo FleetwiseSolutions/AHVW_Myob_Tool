@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { Customer } from "@/lib/features/jobs/jobsSlice";
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     const clientId = process.env.NEXT_PUBLIC_MYOB_CLIENT_ID!;
 
     // Fetch all customer contacts
-    let customers: any[] = [];
+    let customers: MyobCustomer[] = [];
     let nextPageLink = `${apiBaseUrl}/${companyFileId}/Contact/Customer`;
 
     while (nextPageLink) {
@@ -77,8 +78,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const customerUID = matchedCustomer.UID;
-
     const accountsUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/Account`;
     const accountsResponse = await fetch(accountsUrl, {
       method: "GET",
@@ -97,17 +96,6 @@ export async function POST(req: Request) {
         { error: errorData.Message || "Error fetching accounts" },
         { status: accountsResponse.status }
       );
-    }
-
-    const accountsData = await accountsResponse.json();
-
-    const matchedAccount = accountsData.Items.find((account: any) => {
-      const name = account.Name.toLowerCase();
-      return name === "Sales".toLowerCase();
-    });
-
-    if (!matchedAccount) {
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
     const taxCodesUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/taxCode`;
@@ -130,7 +118,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const taxCodesData = await taxCodesResponse.json();
+    type TaxCodeType = {
+      Items: TaxCode[];
+    };
+
+    const taxCodesData: TaxCodeType = await taxCodesResponse.json();
 
     const matchedTaxCode = taxCodesData.Items.find((taxCode: any) => {
       const name = taxCode.Code.toLowerCase();

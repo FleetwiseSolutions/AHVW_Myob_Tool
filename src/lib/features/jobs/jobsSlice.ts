@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { supabase } from "@/lib/supabaseClient";
 
-interface Customer {
+export interface Customer {
   id: string;
   name: string;
   email: string;
@@ -11,7 +11,7 @@ interface Customer {
   balanceDueDate: number;
 }
 
-interface Part {
+export interface Part {
   id: string;
   manufacturingPartNumber: string;
   myobAccountUID: string;
@@ -19,7 +19,7 @@ interface Part {
   invoiceDisplay: string;
 }
 
-interface Vehicle {
+export interface Vehicle {
   id: string;
   registration: string;
   vin: string;
@@ -29,7 +29,7 @@ interface Vehicle {
   type: string;
 }
 
-interface JobPart {
+export interface JobPart {
   id: string;
   jobId: string;
   partId: string;
@@ -61,10 +61,10 @@ export interface Job {
   vehicleVin: string;
   Customer: Customer;
   Vehicle: Vehicle;
-  JobPart: JobPart[]; // Add JobParts to the Job interface
+  JobPart: JobPart[]; // Add JobParts to the Job export interface
 }
 
-interface JobState {
+export interface JobState {
   jobs: Job[];
   selectedJob: Job | null;
   status: "idle" | "loading" | "succeeded" | "failed";
