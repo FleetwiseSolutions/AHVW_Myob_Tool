@@ -1,14 +1,5 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { Part } from "@/lib/features/jobs/jobsSlice";
-
-interface PartType {
-  name: string;
-  quantity: number;
-  price: number;
-  description: string;
-  Part: Part;
-}
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +31,7 @@ export async function POST(req: Request) {
     const clientId = process.env.NEXT_PUBLIC_MYOB_CLIENT_ID!;
 
     // Fetch all customer contacts
-    let customers: MyobCustomer[] = [];
+    let customers: any[] = [];
     let nextPageLink = `${apiBaseUrl}/${companyFileId}/Contact/Customer`;
 
     while (nextPageLink) {
@@ -86,6 +77,8 @@ export async function POST(req: Request) {
       );
     }
 
+    const customerUID = matchedCustomer.UID;
+
     const accountsUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/Account`;
     const accountsResponse = await fetch(accountsUrl, {
       method: "GET",
@@ -104,6 +97,17 @@ export async function POST(req: Request) {
         { error: errorData.Message || "Error fetching accounts" },
         { status: accountsResponse.status }
       );
+    }
+
+    const accountsData = await accountsResponse.json();
+
+    const matchedAccount = accountsData.Items.find((account: any) => {
+      const name = account.Name.toLowerCase();
+      return name === "Sales".toLowerCase();
+    });
+
+    if (!matchedAccount) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
     const taxCodesUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/taxCode`;
@@ -126,13 +130,9 @@ export async function POST(req: Request) {
       );
     }
 
-    type TaxCodeType = {
-      Items: TaxCode[];
-    };
+    const taxCodesData = await taxCodesResponse.json();
 
-    const taxCodesData: TaxCodeType = await taxCodesResponse.json();
-
-    const matchedTaxCode = taxCodesData.Items.find((taxCode: TaxCode) => {
+    const matchedTaxCode = taxCodesData.Items.find((taxCode: any) => {
       const name = taxCode.Code.toLowerCase();
       return name === "GST".toLowerCase();
     });
@@ -173,7 +173,7 @@ Vehicle Type: ${jobDescription.vehicleType}
       Lines: [
         jobDescription && jobDescriptionItem,
         customerComments && customerCommentsItem,
-        ...parts.map((part: PartType) => ({
+        ...parts.map((part: any) => ({
           Type: "Transaction",
           Description: part.description,
           UnitCount: part.quantity,
@@ -191,7 +191,7 @@ Vehicle Type: ${jobDescription.vehicleType}
 * Drivers/Operators must do pre-check of Heavy Vehicles before starting a trip to identify any faults.
 * Service completed and Parts fitted as per manufacturer Specifications. AHVW is liable to cover costs for the Fitted/repaired parts and service completed only and is not liable for any other losses.
 * All Fitted parts remain the property of AHVW unless fully paid. Parts can be recovered at any time at any place after due date.
-* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
+* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
     };
 
     const response = await fetch(
