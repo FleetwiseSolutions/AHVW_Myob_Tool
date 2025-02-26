@@ -1,6 +1,10 @@
 "use client";
 
-import { fetchJobs } from "@/lib/features/jobs/jobsSlice";
+import {
+  fetchJobs,
+  Job,
+  updateJobInvoiceId,
+} from "@/lib/features/jobs/jobsSlice";
 import { AppDispatch, RootState } from "@/lib/store";
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -47,6 +51,24 @@ const JobDetails: React.FC = () => {
   useEffect(() => {
     dispatch(fetchJobs());
   }, [dispatch]);
+
+  const updateInvoiceId = async (job: Job, invoiceId: string) => {
+    // First set the invoiceId on your job object
+    const updatedJob = {
+      ...job,
+      invoiceId: invoiceId,
+    };
+
+    // Then dispatch the thunk
+    const resultAction = await dispatch(updateJobInvoiceId(updatedJob));
+
+    // Check if the operation was successful
+    if (updateJobInvoiceId.fulfilled.match(resultAction)) {
+      console.log("Job updated successfully!", resultAction.payload);
+    } else {
+      console.error("Failed to update job:", resultAction.error);
+    }
+  };
 
   if (status === "loading") return <div>Loading...</div>;
   if (status === "failed") return <div>Error: {error}</div>;
@@ -101,10 +123,13 @@ const JobDetails: React.FC = () => {
 
       const data = await response.json();
 
+      console.log(data);
+
       if (response.ok) {
         setInvoiceMessage(
-          `Invoice created successfully! Invoice ID: ${data.invoiceId}`
+          `Invoice created successfully! Invoice ID: ${data.invoiceNumber}`
         );
+        updateInvoiceId(selectedJob, data.invoiceNumber);
       } else {
         setInvoiceMessage(`Error creating invoice: ${data.error}`);
       }
@@ -169,7 +194,7 @@ const JobDetails: React.FC = () => {
           {selectedJob.JobPart.map((part) => (
             <tr key={part.id} className="hover:bg-gray-50">
               <td className="p-2 border border-gray-300">
-                {part.Part.manufacturingPartNumber}
+                {part.Part.invoiceDisplay}
               </td>
               <td className="p-2 border border-gray-300">{part.quantity}</td>
               <td className="p-2 border border-gray-300">
@@ -187,6 +212,10 @@ const JobDetails: React.FC = () => {
       {/* Total Job Cost */}
       <div className="text-xl font-bold mt-4">
         Total: ${totalJobCost.toFixed(2)}
+      </div>
+
+      <div className="text-xl font-bold mt-4">
+        Total inc. GST: ${(totalJobCost * 1.1).toFixed(2)}
       </div>
 
       {/* Create Invoice Button */}

@@ -1,4 +1,3 @@
-// slices/jobSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -62,6 +61,7 @@ export interface Job {
   Customer: Customer;
   Vehicle: Vehicle;
   JobPart: JobPart[]; // Add JobParts to the Job export interface
+  invoiceId?: string;
 }
 
 export interface JobState {
@@ -114,6 +114,26 @@ export const fetchJobs = createAsyncThunk<Job[], void>(
   }
 );
 
+const updateJobInvoiceId = createAsyncThunk<Job, Job>(
+  "jobs/updateJobInvoiceId",
+  async (job: Job, { rejectWithValue }) => {
+    const { data, error } = await supabase
+      .from("Job")
+      .update({ invoiceId: job.invoiceId })
+      .eq("id", job.id)
+      .select()
+      .single(); // Ensure a single row is returned
+
+    if (error || !data) {
+      return rejectWithValue(
+        error?.message || "Failed to update job invoice ID"
+      );
+    }
+
+    return data; // Ensure the updated job is returned
+  }
+);
+
 const jobSlice = createSlice({
   name: "jobs",
   initialState,
@@ -139,4 +159,5 @@ const jobSlice = createSlice({
 });
 
 export const { setSelectedJob } = jobSlice.actions;
+export { updateJobInvoiceId };
 export default jobSlice.reducer;
