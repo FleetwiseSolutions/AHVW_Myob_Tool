@@ -174,8 +174,8 @@ Vehicle Type: ${jobDescription.vehicleType}
       },
 
       Lines: [
-        jobDescription && jobDescriptionItem,
-        customerComments && customerCommentsItem,
+        ...[jobDescriptionItem].filter(() => jobDescription),
+        ...[customerCommentsItem].filter(() => customerComments),
         ...parts.map((part: PartType) => ({
           Type: "Transaction",
           Description: part.description,
