@@ -114,7 +114,7 @@ const JobDetails: React.FC = () => {
           jobType: JobMap(selectedJob.type),
           jobDescription: {
             registration: selectedJob.vehicleRegistration,
-            odometer: selectedJob.odometer,
+            odometer: selectedJob.odometer || "N/A",
             vehicleType: VehicleTypeMap(selectedJob.Vehicle.type),
           },
           customerComments: selectedJob.inspectionComments,
@@ -212,10 +212,8 @@ const JobDetails: React.FC = () => {
       {/* Total Job Cost */}
       <div className="text-xl font-bold mt-4">
         Total: ${totalJobCost.toFixed(2)}
-      </div>
-
-      <div className="text-xl font-bold mt-4">
         Total inc. GST: ${(totalJobCost * 1.1).toFixed(2)}
+        GST: ${totalJobCost * 0.1}
       </div>
 
       {/* Create Invoice Button */}
