@@ -105,7 +105,7 @@ const JobDetails: React.FC = () => {
           parts: selectedJob.JobPart.map((part) => ({
             name: part.Part.manufacturingPartNumber,
             quantity: part.quantity,
-            price: part.sellPrice,
+            price: part.sellPrice.toFixed(2),
             description: `${part.Part.invoiceDisplay} ${
               part.comments ? ` - ${part.comments}` : ""
             }`,
