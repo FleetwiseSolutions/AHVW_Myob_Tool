@@ -185,7 +185,7 @@ Vehicle Type: ${jobDescription.vehicleType}
           DiscountPercent: 0,
           TaxCode: { UID: matchedTaxCode.UID },
           Item: { UID: part.Part.myobAccountUID },
-          Total: part.price * part.quantity,
+          Total: parseFloat((part.price * part.quantity).toFixed(2)),
         })),
       ], // Empty initially
 
