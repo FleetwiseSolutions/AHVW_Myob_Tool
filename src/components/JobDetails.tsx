@@ -211,9 +211,9 @@ const JobDetails: React.FC = () => {
 
       {/* Total Job Cost */}
       <div className="text-xl font-bold mt-4">
-        Total: ${totalJobCost.toFixed(2)}
-        Total inc. GST: ${(totalJobCost * 1.1).toFixed(2)}
-        GST: ${totalJobCost * 0.1}
+        <p>Total: ${totalJobCost.toFixed(2)}</p>
+        <p>Total inc. GST: ${(totalJobCost * 1.1).toFixed(2)}</p>
+        <p>GST: ${totalJobCost * 0.1}</p>
       </div>
 
       {/* Create Invoice Button */}
