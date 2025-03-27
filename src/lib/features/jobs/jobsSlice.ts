@@ -119,7 +119,7 @@ const updateJobInvoiceId = createAsyncThunk<Job, Job>(
   async (job: Job, { rejectWithValue }) => {
     const { data, error } = await supabase
       .from("Job")
-      .update({ invoiceId: job.invoiceId })
+      .update({ invoiceId: job.invoiceId, status: "Invoiced" })
       .eq("id", job.id)
       .select()
       .single(); // Ensure a single row is returned

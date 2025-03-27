@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       customerBalanceDueDate,
       jobDescription,
       customerComments,
+      sendEmail,
     } = await req.json();
 
     // Retrieve stored access token from cookies
@@ -215,14 +216,66 @@ Vehicle Type: ${jobDescription.vehicleType}
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.log(errorData);
       return NextResponse.json({ error: errorData.Message }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      invoiceNumber: invoiceData.Number,
-    });
+    const location = response.headers.get("location");
+
+    const uid = location!.split("/").pop();
+    console.log("Invoice UID:", uid);
+
+    console.log(sendEmail);
+
+    if (sendEmail) {
+      const customerEmail =
+        matchedCustomer?.Addresses?.[0]?.Email || "ahvwpl@gmail.com";
+      const apiUrl = `${apiBaseUrl}/${companyFileId}/Sale/Invoice/Item/${uid}/Email`;
+
+      console.log(customerEmail);
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "x-myobapi-key": clientId,
+            "x-myobapi-version": "v2",
+            "Content-Type": "apEmailplication/json",
+          },
+          body: JSON.stringify({
+            FormTemplate: "AHVW - Service",
+            To: [{ Email: customerEmail, Name: matchedCustomer.CompanyName }], // Sending to the customer's email
+            From: { Email: "avhw@gmail.com", Name: "AHVW Pty. Ltd." }, // Optional: specify a sender email
+            Subject: `Invoice - ${invoiceData.Number}`,
+            Message: "Please find attached your invoice.",
+          }),
+        });
+
+        if (!response.ok) {
+          console.log(response);
+          throw new Error(
+            `Failed to send invoice email. Status: ${response.status}`
+          );
+        }
+
+        console.log("Invoice email sent successfully");
+
+        return NextResponse.json({
+          success: true,
+          invoiceNumber: invoiceData.Number,
+        });
+      } catch (error) {
+        console.error("Error sending invoice email:", error);
+        return NextResponse.json({
+          success: false,
+        });
+      }
+    } else {
+      return NextResponse.json({
+        success: true,
+        invoiceNumber: invoiceData.Number,
+      });
+    }
   } catch (error) {
     console.error("Invoice Error:", error);
     return NextResponse.json(

@@ -91,6 +91,8 @@ const JobDetails: React.FC = () => {
     setInvoiceMessage("");
 
     try {
+      console.log(selectedJob.Customer);
+
       const response = await fetch("/api/myob/create-invoice", {
         method: "POST",
         headers: {
@@ -118,12 +120,67 @@ const JobDetails: React.FC = () => {
             vehicleType: VehicleTypeMap(selectedJob.Vehicle.type),
           },
           customerComments: selectedJob.inspectionComments,
+          sendEmail: false,
         }),
       });
 
       const data = await response.json();
 
-      console.log(data);
+      if (response.ok) {
+        setInvoiceMessage(
+          `Invoice created successfully! Invoice ID: ${data.invoiceNumber}`
+        );
+        updateInvoiceId(selectedJob, data.invoiceNumber);
+      } else {
+        setInvoiceMessage(`Error creating invoice: ${data.error}`);
+      }
+    } catch (error) {
+      setInvoiceMessage("Failed to create invoice." + error);
+    } finally {
+      setLoadingInvoice(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    setLoadingInvoice(true);
+    setInvoiceMessage("");
+
+    try {
+      console.log(selectedJob.Customer);
+
+      const response = await fetch("/api/myob/create-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerName: selectedJob.Customer.name,
+          jobDate: selectedJob.dateOut || new Date(),
+          vehicleRegistration: selectedJob.Vehicle.registration,
+          customerJobDueDateType: selectedJob.Customer.jobDueDateType,
+          customerBalanceDueDate: selectedJob.Customer.balanceDueDate,
+          parts: selectedJob.JobPart.map((part) => ({
+            name: part.Part.manufacturingPartNumber,
+            quantity: part.quantity,
+            price: parseFloat(part.sellPrice.toFixed(2)),
+            description: `${part.Part.invoiceDisplay} ${
+              part.comments ? ` - ${part.comments}` : ""
+            }`,
+            Part: part.Part,
+          })),
+          jobType: JobMap(selectedJob.type),
+          jobDescription: {
+            registration: selectedJob.vehicleRegistration,
+            odometer: selectedJob.odometer || "N/A",
+            vehicleType: VehicleTypeMap(selectedJob.Vehicle.type),
+          },
+          customerComments: selectedJob.inspectionComments,
+
+          sendEmail: true,
+        }),
+      });
+
+      const data = await response.json();
 
       if (response.ok) {
         setInvoiceMessage(
@@ -217,13 +274,26 @@ const JobDetails: React.FC = () => {
       </div>
 
       {/* Create Invoice Button */}
-      <button
-        className="mt-6 bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
-        onClick={handleCreateInvoice}
-        disabled={loadingInvoice}
-      >
-        {loadingInvoice ? "Creating Invoice..." : "Create Invoice"}
-      </button>
+      <div className="gap-2 flex items-center justify-between w-96">
+        <button
+          className="mt-6 bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
+          onClick={handleCreateInvoice}
+          disabled={loadingInvoice}
+        >
+          {loadingInvoice
+            ? "Creating Invoice..."
+            : "Create Invoice without email"}
+        </button>
+        <button
+          className="mt-6 bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
+          onClick={handleSendEmail}
+          disabled={loadingInvoice}
+        >
+          {loadingInvoice
+            ? "Creating Invoice..."
+            : "Create Invoice with  Email"}
+        </button>
+      </div>
 
       {/* Invoice Response Message */}
       {invoiceMessage && (
