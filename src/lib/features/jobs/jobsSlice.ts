@@ -98,6 +98,7 @@ export const fetchJobs = createAsyncThunk<Job[], void>(
             JobPart (id, partId, quantity, sellPrice, hoursSpent, comments, Part (manufacturingPartNumber, myobAccountUID, description, invoiceDisplay))
           `
         )
+        .eq("status", "COMPLETED")
         .range(start, start + pageSize - 1); // Fetch in batches
 
       if (error) throw error;
@@ -119,7 +120,7 @@ const updateJobInvoiceId = createAsyncThunk<Job, Job>(
   async (job: Job, { rejectWithValue }) => {
     const { data, error } = await supabase
       .from("Job")
-      .update({ invoiceId: job.invoiceId, status: "Invoiced" })
+      .update({ invoiceId: job.invoiceId, status: "INVOICED" })
       .eq("id", job.id)
       .select()
       .single(); // Ensure a single row is returned
