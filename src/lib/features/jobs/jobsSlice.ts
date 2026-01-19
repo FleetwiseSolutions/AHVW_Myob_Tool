@@ -98,7 +98,7 @@ export const fetchJobs = createAsyncThunk<Job[], void>(
             JobPart (id, partId, quantity, sellPrice, hoursSpent, comments, Part (manufacturingPartNumber, myobAccountUID, description, invoiceDisplay))
           `
         )
-        .eq("status", "COMPLETED")
+        .in("status", ["COMPLETED", "CASH"])
         .range(start, start + pageSize - 1); // Fetch in batches
 
       if (error) throw error;
