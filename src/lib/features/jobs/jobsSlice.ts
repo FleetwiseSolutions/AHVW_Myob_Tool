@@ -62,6 +62,10 @@ export interface Job {
   Vehicle: Vehicle;
   JobPart: JobPart[]; // Add JobParts to the Job export interface
   invoiceId?: string;
+  discordUrl?: string;
+  team_group?: string;
+  job_hours_reported?: number;
+  job_hours_charged?: number;
 }
 
 export interface JobState {
