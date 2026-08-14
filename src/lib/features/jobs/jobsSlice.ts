@@ -5,15 +5,15 @@ export interface Customer {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  jobDueDateType: string;
-  balanceDueDate: number;
+  phone: string | null;
+  jobDueDateType: string | null;
+  balanceDueDate: number | null;
 }
 
 export interface Part {
   id: string;
   manufacturingPartNumber: string;
-  myobAccountUID: string;
+  myobAccountUID: string | null;
   description: string;
   invoiceDisplay: string;
 }
@@ -21,10 +21,10 @@ export interface Part {
 export interface Vehicle {
   id: string;
   registration: string;
-  vin: string;
-  make: string;
-  model: string;
-  year: number;
+  vin: string | null;
+  make: string | null;
+  model: string | null;
+  year: number | null;
   type: string;
 }
 
@@ -43,29 +43,37 @@ export interface Job {
   id: string;
   type: string;
   vehicleId: string;
+
+  imageUrls: string | null;
+
   nextServiceDate: string | null;
   nextServiceType: string | null;
-  odometer: number | null;
-  imageUrls: string | null;
+  nextServiceKM: number | null;
+
   status: string;
+  odometer: number | null;
+
   customerId: string;
   dateIn: string;
   dateOut: string;
+
   inspectionComments: string | null;
   invoiceComments: string | null;
-  nextServiceKM: number | null;
   serviceComments: string | null;
   serviceString: string;
+
   vehicleRegistration: string;
   vehicleVin: string;
+
   Customer: Customer;
   Vehicle: Vehicle;
-  JobPart: JobPart[]; // Add JobParts to the Job export interface
-  invoiceId?: string;
-  discordUrl?: string;
-  team_group?: string;
-  job_hours_reported?: number;
-  job_hours_charged?: number;
+  JobPart: JobPart[];
+
+  invoiceId: string | null;
+  discordUrl: string | null;
+  team_group: string | null;
+  job_hours_reported: number | null;
+  job_hours_charged: number | null;
 }
 
 export interface JobState {
@@ -88,30 +96,66 @@ export const fetchJobs = createAsyncThunk<Job[], void>(
   async () => {
     let allJobs: Job[] = [];
     let start = 0;
-    const pageSize = 1000; // Fetch 1000 rows at a time
+    const pageSize = 1000;
     let moreDataAvailable = true;
 
     while (moreDataAvailable) {
       const { data, error } = await supabase
         .from("Job")
-        .select(
-          `
-            *,
-            Customer (name, email, phone, jobDueDateType, balanceDueDate),
-            Vehicle (registration, vin, make, model, year, type),
-            JobPart (id, partId, quantity, sellPrice, hoursSpent, comments, Part (manufacturingPartNumber, myobAccountUID, description, invoiceDisplay))
-          `
-        )
+        .select(`
+          *,
+          Customer (
+            id,
+            name,
+            email,
+            phone,
+            jobDueDateType,
+            balanceDueDate
+          ),
+          Vehicle (
+            id,
+            registration,
+            vin,
+            make,
+            model,
+            year,
+            type
+          ),
+          JobPart (
+            id,
+            jobId,
+            partId,
+            quantity,
+            sellPrice,
+            hoursSpent,
+            comments,
+            Part (
+              id,
+              manufacturingPartNumber,
+              myobAccountUID,
+              description,
+              invoiceDisplay
+            )
+          )
+        `)
         .in("status", ["COMPLETED", "CASH"])
-        .range(start, start + pageSize - 1); // Fetch in batches
+        .range(start, start + pageSize - 1);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      if (data.length === 0) {
-        moreDataAvailable = false; // Stop fetching when no more data is available
+      if (!data || data.length === 0) {
+        moreDataAvailable = false;
       } else {
-        allJobs = allJobs.concat(data);
-        start += pageSize; // Move to the next batch
+        allJobs = allJobs.concat(data as Job[]);
+        start += pageSize;
+
+        // If fewer than pageSize rows were returned, we've reached
+        // the end and don't need another request.
+        if (data.length < pageSize) {
+          moreDataAvailable = false;
+        }
       }
     }
 
@@ -124,10 +168,13 @@ const updateJobInvoiceId = createAsyncThunk<Job, Job>(
   async (job: Job, { rejectWithValue }) => {
     const { data, error } = await supabase
       .from("Job")
-      .update({ invoiceId: job.invoiceId, status: "INVOICED" })
+      .update({
+        invoiceId: job.invoiceId,
+        status: "INVOICED",
+      })
       .eq("id", job.id)
       .select()
-      .single(); // Ensure a single row is returned
+      .single();
 
     if (error || !data) {
       return rejectWithValue(
@@ -135,7 +182,7 @@ const updateJobInvoiceId = createAsyncThunk<Job, Job>(
       );
     }
 
-    return data; // Ensure the updated job is returned
+    return data as Job;
   }
 );
 
@@ -151,6 +198,7 @@ const jobSlice = createSlice({
     builder
       .addCase(fetchJobs.pending, (state) => {
         state.status = "loading";
+        state.error = null;
       })
       .addCase(fetchJobs.fulfilled, (state, action: PayloadAction<Job[]>) => {
         state.status = "succeeded";
@@ -159,6 +207,19 @@ const jobSlice = createSlice({
       .addCase(fetchJobs.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to fetch jobs";
+      })
+      .addCase(updateJobInvoiceId.fulfilled, (state, action) => {
+        const index = state.jobs.findIndex(
+          (job) => job.id === action.payload.id
+        );
+
+        if (index !== -1) {
+          state.jobs[index] = action.payload;
+        }
+
+        if (state.selectedJob?.id === action.payload.id) {
+          state.selectedJob = action.payload;
+        }
       });
   },
 });
