@@ -9,6 +9,9 @@ import { AppDispatch, RootState } from "@/lib/store";
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
+import CommentPicker from "./CommentPicker";
+import { COMMENT_PRESETS, resolveComment } from "@/lib/commentPresets";
+
 export const JobMap = (jobType: string) => {
   switch (jobType) {
     case "C_SERVICE":
@@ -47,6 +50,8 @@ const JobDetails: React.FC = () => {
   const { status, error } = useSelector((state: RootState) => state.jobs);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [invoiceMessage, setInvoiceMessage] = useState("");
+  const [commentId, setCommentId] = useState<string>(COMMENT_PRESETS[0].id);
+  const [customComment, setCustomComment] = useState("");
 
   useEffect(() => {
     dispatch(fetchJobs());
@@ -120,6 +125,7 @@ const JobDetails: React.FC = () => {
             vehicleType: VehicleTypeMap(selectedJob.Vehicle.type),
           },
           customerComments: selectedJob.inspectionComments,
+          invoiceComment: resolveComment(commentId, customComment),
           sendEmail: false,
         }),
       });
@@ -175,7 +181,7 @@ const JobDetails: React.FC = () => {
             vehicleType: VehicleTypeMap(selectedJob.Vehicle.type),
           },
           customerComments: selectedJob.inspectionComments,
-
+          invoiceComment: resolveComment(commentId, customComment),
           sendEmail: true,
         }),
       });
@@ -272,6 +278,13 @@ const JobDetails: React.FC = () => {
         <p>Total inc. GST: ${(totalJobCost * 1.1).toFixed(2)}</p>
         <p>GST: ${totalJobCost * 0.1}</p>
       </div>
+
+      <CommentPicker
+        selectedId={commentId}
+        customText={customComment}
+        onSelectedIdChange={setCommentId}
+        onCustomTextChange={setCustomComment}
+      />
 
       {/* Create Invoice Button */}
       <div className="gap-2 flex items-center justify-between w-96">

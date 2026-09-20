@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { Part } from "@/lib/features/jobs/jobsSlice";
+import { DEFAULT_COMMENT } from "@/lib/commentPresets";
+
 interface PartType {
   name: string;
   quantity: number;
@@ -21,6 +23,7 @@ export async function POST(req: Request) {
       customerBalanceDueDate,
       jobDescription,
       customerComments,
+      invoiceComment,
       sendEmail,
     } = await req.json();
 
@@ -190,14 +193,8 @@ Vehicle Type: ${jobDescription.vehicleType}
         })),
       ], // Empty initially
 
-      Comment: `
-* Semi Trailer to be serviced every 20,000KM or 3 months whichever earlier after B or C Service
-* Wheel Nuts to be checked after 50KM
-* Drivers/Operators must do pre-check of Heavy Vehicles before starting a trip to identify any faults.
-* Service completed and Parts fitted as per manufacturer Specifications. AHVW is liable to cover costs for the Fitted/repaired parts and service completed only and is not liable for any other losses.
-* All Fitted parts remain the property of AHVW unless fully paid. Parts can be recovered at any time at any place after due date.
-* Replaced parts will be scrapped. Can be returned to vehicle owner upon written request before picking up the trailer. Extra charges may apply.
-* Extra interest or management costs can be added to the invoices amount if not fully paid by due date.`,
+      Comment:
+        typeof invoiceComment === "string" ? invoiceComment : DEFAULT_COMMENT,
     };
 
     const response = await fetch(
