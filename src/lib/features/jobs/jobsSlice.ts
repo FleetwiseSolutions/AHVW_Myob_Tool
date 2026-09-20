@@ -212,13 +212,13 @@ const jobSlice = createSlice({
         const index = state.jobs.findIndex(
           (job) => job.id === action.payload.id
         );
-
+        
         if (index !== -1) {
-          state.jobs[index] = action.payload;
+          state.jobs[index] = { ...state.jobs[index], ...action.payload };
         }
 
         if (state.selectedJob?.id === action.payload.id) {
-          state.selectedJob = action.payload;
+          state.selectedJob = { ...state.selectedJob, ...action.payload };
         }
       });
   },

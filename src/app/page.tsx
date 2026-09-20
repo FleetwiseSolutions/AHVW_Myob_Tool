@@ -3,9 +3,9 @@ import JobDetails from "../components/JobDetails";
 
 export default function Home() {
   return (
-    <div className="flex overflow-auto">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-4 overflow-auto">
+      <main className="flex-1 overflow-y-auto">
         <JobDetails />
       </main>
     </div>

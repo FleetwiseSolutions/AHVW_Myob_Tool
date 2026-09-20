@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { Part } from "@/lib/features/jobs/jobsSlice";
 import { DEFAULT_COMMENT } from "@/lib/commentPresets";
-
 interface PartType {
   name: string;
   quantity: number;
@@ -92,26 +91,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const accountsUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/Account`;
-    const accountsResponse = await fetch(accountsUrl, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "x-myobapi-key": clientId,
-        "x-myobapi-version": "v2",
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!accountsResponse.ok) {
-      const errorData = await accountsResponse.json();
-      console.error("Error fetching accounts:", errorData);
-      return NextResponse.json(
-        { error: errorData.Message || "Error fetching accounts" },
-        { status: accountsResponse.status }
-      );
-    }
-
     const taxCodesUrl = `${apiBaseUrl}/${companyFileId}/GeneralLedger/taxCode`;
     const taxCodesResponse = await fetch(taxCodesUrl, {
       method: "GET",
@@ -193,6 +172,8 @@ Vehicle Type: ${jobDescription.vehicleType}
         })),
       ], // Empty initially
 
+      // Falls back to the default preset only if the client sent nothing;
+      // an empty string is respected (custom comment left blank).
       Comment:
         typeof invoiceComment === "string" ? invoiceComment : DEFAULT_COMMENT,
     };
@@ -219,57 +200,57 @@ Vehicle Type: ${jobDescription.vehicleType}
     const location = response.headers.get("location");
 
     const uid = location!.split("/").pop();
-    console.log("Invoice UID:", uid);
 
-    console.log(sendEmail);
-
-    if (sendEmail) {
-      const customerEmail =
-        matchedCustomer?.Addresses?.[0]?.Email || "ahvwpl@gmail.com";
-      const apiUrl = `${apiBaseUrl}/${companyFileId}/Sale/Invoice/Item/${uid}/Email`;
-
-      console.log(customerEmail);
-
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "x-myobapi-key": clientId,
-            "x-myobapi-version": "v2",
-            "Content-Type": "apEmailplication/json",
-          },
-          body: JSON.stringify({
-            FormTemplate: "AHVW - Service",
-            To: [{ Email: customerEmail, Name: matchedCustomer.CompanyName }], // Sending to the customer's email
-            From: { Email: "avhw@gmail.com", Name: "AHVW Pty. Ltd." }, // Optional: specify a sender email
-            Subject: `Invoice - ${invoiceData.Number}`,
-            Message: "Please find attached your invoice.",
-          }),
-        });
-
-        if (!response.ok) {
-          console.log(response);
-          throw new Error(
-            `Failed to send invoice email. Status: ${response.status}`
-          );
-        }
-
-        console.log("Invoice email sent successfully");
-
-        return NextResponse.json({
-          success: true,
-          invoiceNumber: invoiceData.Number,
-        });
-      } catch (error) {
-        console.error("Error sending invoice email:", error);
-        return NextResponse.json({
-          success: false,
-        });
-      }
-    } else {
+    if (!sendEmail) {
       return NextResponse.json({
         success: true,
+        invoiceNumber: invoiceData.Number,
+      });
+    }
+
+    // The invoice already exists at this point, so an email failure must not
+    // look like an invoice failure - report it separately.
+    const customerEmail =
+      matchedCustomer?.Addresses?.[0]?.Email || "ahvwpl@gmail.com";
+    const recipientName =
+      matchedCustomer.CompanyName ||
+      `${matchedCustomer.FirstName ?? ""} ${matchedCustomer.LastName ?? ""}`.trim();
+    const emailUrl = `${apiBaseUrl}/${companyFileId}/Sale/Invoice/Item/${uid}/Email`;
+
+    try {
+      const emailResponse = await fetch(emailUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "x-myobapi-key": clientId,
+          "x-myobapi-version": "v2",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          FormTemplate: "AHVW - Service",
+          To: [{ Email: customerEmail, Name: recipientName }],
+          From: { Email: "ahvw@gmail.com", Name: "AHVW Pty. Ltd." },
+          Subject: `Invoice - ${invoiceData.Number}`,
+          Message: "Please find attached your invoice.",
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error(
+          `Failed to send invoice email. Status: ${emailResponse.status}`
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        emailSent: true,
+        invoiceNumber: invoiceData.Number,
+      });
+    } catch (emailError) {
+      console.error("Error sending invoice email:", emailError);
+      return NextResponse.json({
+        success: true,
+        emailSent: false,
         invoiceNumber: invoiceData.Number,
       });
     }
