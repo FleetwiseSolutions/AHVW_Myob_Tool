@@ -26,6 +26,7 @@ export interface Vehicle {
   model: string | null;
   year: number | null;
   type: string;
+  fleetNo: string | null;
 }
 
 export interface JobPart {
