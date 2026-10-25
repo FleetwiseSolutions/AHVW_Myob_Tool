@@ -120,7 +120,8 @@ export const fetchJobs = createAsyncThunk<Job[], void>(
             make,
             model,
             year,
-            type
+            type,
+            fleetNo
           ),
           JobPart (
             id,
