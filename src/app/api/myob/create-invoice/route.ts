@@ -132,6 +132,7 @@ export async function POST(req: Request) {
     const jobDescriptionItem = {
       Type: "Header",
       Description: `Vehicle Registration: ${jobDescription.registration}
+Fleet No: ${jobDescription.fleetNo || "N/A"}
 Odometer: ${jobDescription.odometer}
 Vehicle Type: ${jobDescription.vehicleType}
       `,
