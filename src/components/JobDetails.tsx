@@ -227,6 +227,7 @@ const JobDetails: React.FC = () => {
           jobType: JobMap(selectedJob.type),
           jobDescription: {
             registration: selectedJob.vehicleRegistration,
+            fleetNo: selectedJob.Vehicle.fleetNo,
             odometer: selectedJob.odometer || "N/A",
             vehicleType: VehicleTypeMap(selectedJob.Vehicle.type),
           },
